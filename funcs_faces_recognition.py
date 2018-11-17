@@ -8,51 +8,52 @@ import funcs_hfs
 
 
 def resize_rectangle(rect, lx, ly, xbounds, ybounds):
-	"""Reshape rectangle around its center"""
-	center = (int(rect[0] + rect[2]/2), int(rect[1] + rect[3]/2))
-	x = center[0] - int(lx/2)
-	y = center[1] - int(ly/2)
-	if x + lx > xbounds[1]:
-	    x = xbounds[1] - lx
-	elif x - lx < xbounds[0]:
-	    x = xbounds[0]
-	if y + ly > ybounds[1]:
-	    y = ybounds[1] - ly
-	elif y - ly < ybounds[0]:
-	    y = ybounds[0]
-	return x, y, lx, ly
+    """Reshape rectangle around its center"""
+    center = (int(rect[0] + rect[2]/2), int(rect[1] + rect[3]/2))
+    x = center[0] - int(lx/2)
+    y = center[1] - int(ly/2)
+    if x + lx > xbounds[1]:
+        x = xbounds[1] - lx
+    elif x - lx < xbounds[0]:
+        x = xbounds[0]
+    if y + ly > ybounds[1]:
+        y = ybounds[1] - ly
+    elif y - ly < ybounds[0]:
+        y = ybounds[0]
+    return x, y, lx, ly
 
 
-def load_faces(path, dataadd = "/10faces/"):
-    
+def load_faces(path, dataadd = "/10faces/", xmladd=""):
+
     # Parameters
-    cc = cv2.CascadeClassifier(path + 'haarcascade_frontalface_default.xml')
+    cc = cv2.CascadeClassifier(path + xmladd + 'haarcascade_frontalface_default.xml')
     frame_size = 96
     gamma = .95
     var=10000
-    
+
     # List folders
     datapath = path + dataadd
     folders = os.listdir(datapath)
     folders.sort()
-    
+
     # Infer nlabels and nimages per labels
     nlabels = len(folders)
     nimages_perlabel = len(os.listdir(datapath + "/" + folders[0] + "/"))
-    
+
     # Loading images
     images = np.zeros((nlabels * nimages_perlabel, frame_size ** 2))
     labels = np.zeros(nlabels * nimages_perlabel)
-    
+
     # Initialize counter variables
     i = 0
     j = 0
-    
+
     # Loop over all files
     for folder in os.listdir(datapath):
         files = os.listdir(datapath + folder + "/")
         files.sort()
         for file in files:
+            print(file)
             # Read image
             im = cv2.imread(datapath + folder + "/" + file)
             # Detect face
@@ -66,9 +67,12 @@ def load_faces(path, dataadd = "/10faces/"):
             gray_face = gray_im[y:y + ly, x:x + lx]
             #resize the face and reshape it to a row vector, record labels
             gf = gray_face.copy()
-            images[j * nlabels +  i % 10] = gf.reshape((frame_size ** 2, ))
-            labels[j * nlabels + i % 10] = j + 1
-            i += 1
+            try:
+                images[j * nlabels +  i % 10] = gf.reshape((frame_size ** 2, ))
+                labels[j * nlabels + i % 10] = j + 1
+                i += 1
+            except ValueError:
+                print("Reshaping problem encountered, leave out the problematic image")
         j += 1
     return images, labels
 
@@ -133,3 +137,13 @@ def offline_face_recognition_soft(X, Y, cl=10, cu=1, l=4,
     plt.title("Acc: {}".format(np.equal(rlabels, labels).mean()))
 
     plt.show()
+
+
+def add_extension_expanded(datapath):
+    folders = os.listdir(datapath)
+    folders.sort()
+    for folder in os.listdir(datapath):
+        files = os.listdir(datapath + folder + "/")
+        files.sort()
+        for file in files:
+            os.rename(datapath + "/" + folder + "/" + file, datapath + "/" + folder + "/" + file + ".jpg")
