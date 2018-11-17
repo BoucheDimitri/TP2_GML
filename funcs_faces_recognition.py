@@ -44,35 +44,39 @@ def load_faces(path, dataadd = "/10faces/", xmladd=""):
     images = np.zeros((nlabels * nimages_perlabel, frame_size ** 2))
     labels = np.zeros(nlabels * nimages_perlabel)
 
-    # Initialize counter variables
-    i = 0
+    # Initialize counter variable
     j = 0
 
     # Loop over all files
     for folder in os.listdir(datapath):
         files = os.listdir(datapath + folder + "/")
         files.sort()
+        i = 0
         for file in files:
             print(file)
             # Read image
             im = cv2.imread(datapath + folder + "/" + file)
             # Detect face
-            box = cc.detectMultiScale(im)[0]
-            gray_im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-            # Resize rectangle so that it fits in frame size
-            xbounds = (0, im.shape[0] - 1)
-            ybounds = (0, im.shape[1] - 1)
-            x, y, lx, ly = resize_rectangle(box, frame_size, frame_size, xbounds, ybounds)
-            # Convert to grayscale
-            gray_face = gray_im[y:y + ly, x:x + lx]
-            #resize the face and reshape it to a row vector, record labels
-            gf = gray_face.copy()
-            try:
-                images[j * nlabels +  i % 10] = gf.reshape((frame_size ** 2, ))
-                labels[j * nlabels + i % 10] = j + 1
-                i += 1
-            except ValueError:
-                print("Reshaping problem encountered, leave out the problematic image")
+            # (Catch exception for some image that raise error)
+            box = cc.detectMultiScale(im)
+            if len(box) != 0:
+                print(box)
+                box = box[0]
+                gray_im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+                # Resize rectangle so that it fits in frame size
+                xbounds = (0, im.shape[0] - 1)
+                ybounds = (0, im.shape[1] - 1)
+                x, y, lx, ly = resize_rectangle(box, frame_size, frame_size, xbounds, ybounds)
+                # Convert to grayscale
+                gray_face = gray_im[y:y + ly, x:x + lx]
+                #resize the face and reshape it to a row vector, record labels
+                gf = gray_face.copy()
+                try:
+                    images[j * nlabels + i] = gf.reshape((frame_size ** 2, ))
+                    labels[j * nlabels + i] = int(folder) + 1
+                    i += 1
+                except ValueError:
+                    print("Reshaping problem encountered, leave out the problematic image")
         j += 1
     return images, labels
 
