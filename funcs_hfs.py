@@ -76,11 +76,11 @@ def hard_hfs(X, Y, laplacian_regularization=0.000001, var=1, eps=0, k=10, laplac
     return labels
 
 
-def two_moons_hfs_hard(path, l = 4, var=1, eps=0, k=10, laplacian_normalization=""):
+def two_moons_hfs_hard(path, dataset = '/data/data_2moons_hfs', l = 4, var=1, eps=0, k=10, laplacian_normalization=""):
     # a skeleton function to perform HFS, needs to be completed
 
     # load the data
-    in_data =scipy.io.loadmat(path+'/data/data_2moons_hfs')
+    in_data =scipy.io.loadmat(path + dataset)
     X = in_data['X']
     Y = in_data['Y'][:, 0]
 
@@ -93,7 +93,6 @@ def two_moons_hfs_hard(path, l = 4, var=1, eps=0, k=10, laplacian_normalization=
     accuracy = np.mean(labels == np.squeeze(Y))
     
     return accuracy
-
 
 
 def soft_hfs(X, Y, c_l, c_u, laplacian_regularization=0.000001 ,var=1, eps=0, k=10, laplacian_normalization=""):

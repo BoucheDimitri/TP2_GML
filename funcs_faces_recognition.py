@@ -28,8 +28,6 @@ def load_faces(path, dataadd = "/10faces/", xmladd=""):
     # Parameters
     cc = cv2.CascadeClassifier(path + xmladd + 'haarcascade_frontalface_default.xml')
     frame_size = 96
-    gamma = .95
-    var=10000
 
     # List folders
     datapath = path + dataadd
@@ -53,30 +51,78 @@ def load_faces(path, dataadd = "/10faces/", xmladd=""):
         files.sort()
         i = 0
         for file in files:
-            print(file)
             # Read image
             im = cv2.imread(datapath + folder + "/" + file)
             # Detect face
             # (Catch exception for some image that raise error)
             box = cc.detectMultiScale(im)
-            if len(box) != 0:
-                print(box)
+            box = box[0]
+            gray_im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+            # Resize rectangle so that it fits in frame size
+            xbounds = (0, im.shape[0] - 1)
+            ybounds = (0, im.shape[1] - 1)
+            x, y, lx, ly = resize_rectangle(box, frame_size, frame_size, xbounds, ybounds)
+            # Convert to grayscale
+            gray_face = gray_im[y:y + ly, x:x + lx]
+            # resize the face and reshape it to a row vector, record labels
+            gf = gray_face.copy()
+            images[j * nlabels + i] = gf.reshape((frame_size ** 2, ))
+            labels[j * nlabels + i] = int(folder) + 1
+            i += 1
+        j += 1
+    return images, labels
+
+
+def load_faces_extended(path, dataadd = "/extended_dataset/", xmladd="/data/"):
+
+    # Parameters
+    cc = cv2.CascadeClassifier(path + xmladd + 'haarcascade_frontalface_default.xml')
+    frame_size = 96
+    nbimgs = 50
+
+    # List folders
+    datapath = path + dataadd
+    folders = os.listdir(datapath)
+    folders.sort()
+
+    # Infer nlabels and nimages per labels
+    nlabels = len(folders)
+
+    # Loading images
+    images = np.zeros((nlabels * nbimgs, frame_size ** 2))
+    labels = np.zeros(nlabels * nbimgs)
+
+    # Initialize counter variable
+    j = 0
+
+    # Loop over all files
+    for folder in os.listdir(datapath):
+        files = os.listdir(datapath + folder + "/")
+        files.sort()
+        i = 0
+        while i < nbimgs:
+            # Read image
+            im = cv2.imread(datapath + folder + "/" + files[i])
+            gray_im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+            # Detect face
+            # (Catch exception for some image that raise error)
+            box = cc.detectMultiScale(gray_im)
+            try:
                 box = box[0]
-                gray_im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
                 # Resize rectangle so that it fits in frame size
                 xbounds = (0, im.shape[0] - 1)
                 ybounds = (0, im.shape[1] - 1)
                 x, y, lx, ly = resize_rectangle(box, frame_size, frame_size, xbounds, ybounds)
                 # Convert to grayscale
                 gray_face = gray_im[y:y + ly, x:x + lx]
-                #resize the face and reshape it to a row vector, record labels
+                # resize the face and reshape it to a row vector, record labels
                 gf = gray_face.copy()
-                try:
-                    images[j * nlabels + i] = gf.reshape((frame_size ** 2, ))
-                    labels[j * nlabels + i] = int(folder) + 1
-                    i += 1
-                except ValueError:
-                    print("Reshaping problem encountered, leave out the problematic image")
+                images[j * nlabels + i] = gf.reshape((frame_size ** 2, ))
+                labels[j * nlabels + i] = int(folder) + 1
+                i += 1
+                print(i)
+            except IndexError:
+                continue
         j += 1
     return images, labels
 
@@ -112,6 +158,8 @@ def offline_face_recognition_hard(X, Y, l=4,
     Y_masked = mask_labels_faces(Y, l)
     labels = Y
     rlabels = funcs_hfs.hard_hfs(X, Y_masked, laplacian_regularization, var, eps, k, laplacian_normalization)
+    u_idx = np.argwhere(Y_masked == 0)
+    perfs_unlabelled = np.equal(rlabels[u_idx], labels[u_idx]).mean()
     
     # Plots #
     plt.subplot(121)
@@ -122,6 +170,7 @@ def offline_face_recognition_hard(X, Y, l=4,
     plt.title("Acc: {}".format(np.equal(rlabels, labels).mean()))
 
     plt.show()
+    return perfs_unlabelled
 
 
 def offline_face_recognition_soft(X, Y, cl=10, cu=1, l=4, 
@@ -132,6 +181,9 @@ def offline_face_recognition_soft(X, Y, cl=10, cu=1, l=4,
     Y_masked = mask_labels_faces(Y, l)
     labels = Y
     rlabels = funcs_hfs.soft_hfs(X, Y_masked, cl, cu, laplacian_regularization, var, eps, k, laplacian_normalization)
+
+    u_idx = np.argwhere(Y_masked == 0)
+    perfs_unlabelled = np.equal(rlabels[u_idx], labels[u_idx]).mean()
     # Plots #
     plt.subplot(121)
     plt.imshow(labels.reshape((10, 10)))
@@ -141,6 +193,7 @@ def offline_face_recognition_soft(X, Y, cl=10, cu=1, l=4,
     plt.title("Acc: {}".format(np.equal(rlabels, labels).mean()))
 
     plt.show()
+    return perfs_unlabelled
 
 
 def add_extension_expanded(datapath):
