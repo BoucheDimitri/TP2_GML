@@ -158,7 +158,7 @@ def mask_labels_faces(Y, lper_person):
 def offline_face_recognition_hard(X, Y, l=4, 
                                   laplacian_regularization=0.0001, 
                                   var=1e3, eps=0, k=10, 
-                                  laplacian_normalization=""):
+                                  laplacian_normalization="", bigfigure=False):
 
     nbimgs = int(Y.shape[0] / 10)
     Y_masked = mask_labels_faces(Y, l)
@@ -168,7 +168,8 @@ def offline_face_recognition_hard(X, Y, l=4,
     perfs_unlabelled = np.equal(rlabels[u_idx], labels[u_idx]).mean()
     
     # Plots #
-    fig = plt.figure(figsize=(18, 16), dpi=80, facecolor='w', edgecolor='k')
+    if bigfigure:
+        fig = plt.figure(figsize=(18, 16), dpi=80, facecolor='w', edgecolor='k')
     plt.subplot(121)
     plt.imshow(labels.reshape((10, nbimgs)))
 
@@ -183,7 +184,7 @@ def offline_face_recognition_hard(X, Y, l=4,
 def offline_face_recognition_soft(X, Y, cl=10, cu=1, l=4, 
                                   laplacian_regularization=0.0001, 
                                   var=1e3, eps=0, k=9, 
-                                  laplacian_normalization=""):
+                                  laplacian_normalization="", bigfigure=False):
 
     nbimgs = int(Y.shape[0] / 10)
     Y_masked = mask_labels_faces(Y, l)
@@ -194,7 +195,8 @@ def offline_face_recognition_soft(X, Y, cl=10, cu=1, l=4,
     perfs_unlabelled = np.equal(rlabels[u_idx], labels[u_idx]).mean()
 
     # Plots #
-    fig = plt.figure(figsize=(18, 16), dpi=80, facecolor='w', edgecolor='k')
+    if bigfigure:
+        fig = plt.figure(figsize=(18, 16), dpi=80, facecolor='w', edgecolor='k')
     plt.subplot(121)
     plt.imshow(labels.reshape((10, nbimgs)))
 
